@@ -158,9 +158,6 @@ const Account: React.FC = () => {
                                 en un clin d&apos;oeil.
                             </p>
                         </div>
-                        <Button type="button" variant="danger" onClick={handleLogout}>
-                            Se déconnecter
-                        </Button>
                     </div>
 
                     {error && (
@@ -184,9 +181,14 @@ const Account: React.FC = () => {
                                     ))}
                                 </dl>
                             )}
+                            <div className="mt-5">
+                                <Button className={"w-full"} type="button" variant="danger" onClick={handleLogout}>
+                                    Se déconnecter
+                                </Button>
+                            </div>
                         </Card>
 
-                        <Card as="section">
+                        <Card className={"flex justify-center items-center flex-col text-center"} as="section">
                             <h2 className="text-lg font-semibold text-gray-900">Réserver des billets</h2>
                             <p className="mt-3 text-sm text-gray-600">
                                 Envie de vivre d&apos;autres émotions ? Consultez les offres disponibles et réservez vos
