@@ -1,0 +1,15 @@
+import React from 'react';
+
+interface BlockProps {
+    children: React.ReactNode;
+    className?: string;
+    [key: string]: any;
+}
+
+const Section: React.FC<BlockProps> = ({children, className, ...rest}) => (
+    <section className={`py-16 ${className ?? ''}`} {...rest}>
+        {children}
+    </section>
+);
+
+export default Section;

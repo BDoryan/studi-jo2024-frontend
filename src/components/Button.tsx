@@ -1,0 +1,41 @@
+import React from "react"
+
+type ButtonVariant = "primary" | "secondary" | "outline" | "ghost"
+type ButtonSize = "sm" | "md" | "lg"
+
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+    variant?: ButtonVariant
+    size?: ButtonSize
+}
+
+export const Button: React.FC<ButtonProps> = ({
+                                                  children,
+                                                  variant = "primary",
+                                                  size = "md",
+                                                  className = "",
+                                                  ...props
+                                              }) => {
+    const base = "  inline-flex items-center justify-center font-medium rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none"
+
+    const variants: Record<ButtonVariant, string> = {
+        primary: "font-bold bg-primary-400 text-primary-50 hover:bg-primary-500 hover:text-white focus-visible:ring-primary",
+        secondary: "font-bold bg-primary-50 text-black hover:bg-gray-200 border border-gray-300 focus-visible:ring-primary",
+        outline: "border border-primary-400 text-primary-500 hover:bg-primary-400 hover:text-primary-50 focus-visible:ring-primary",
+        ghost:
+            "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200",
+    }
+
+    const sizes: Record<ButtonSize, string> = {
+        sm: "py-1 px-2 text-base",
+        md: "py-2 px-4 text-lg",
+        lg: "py-3 px-6 text-xl",
+    }
+
+    const classes = `${base} ${variants[variant]} ${sizes[size]} ${className}`
+
+    return (
+        <button className={classes} {...props}>
+            {children}
+        </button>
+    )
+}

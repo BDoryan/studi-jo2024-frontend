@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+/* Déclaration de ta police locale */
+@font-face {
+    font-family: "Paris2024";
+    src: url("/fonts/paris2024.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+
+@theme {
+    --font-sans: "Paris2024", ui-sans-serif, system-ui, sans-serif;
+
+    /* 🎨 Couleurs personnalisées */
+    --color-primary-50:  #faf7ed;
+    --color-primary-100: #f5efdb;
+    --color-primary-200: #e9ddb8;
+    --color-primary-300: #deca95;
+    --color-primary-400: #d7c17d; /* ta couleur principale */
+    --color-primary-500: #c8b267;
+    --color-primary-600: #b09c55;
+    --color-primary-700: #8e7f44;
+    --color-primary-800: #6b6133;
+    --color-primary-900: #4b4524;
+
+    --color-secondary: #ffffff;
+}
