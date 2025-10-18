@@ -7,7 +7,7 @@ const Hero: React.FC = () => {
     return (
         <Section className={"relative"} style={{backgroundImage: `url('/imgs/hero-bg.jpg'`, backgroundSize: 'cover', backgroundPosition: 'center'}}>
             <div className={"bg-black/45 absolute inset-0"}></div>
-            <div className="relative container flex flex-col gap-6 mx-auto px-6 py-32 text-center text-white">
+            <div className="relative container flex flex-col gap-6 mx-auto px-6 py-10 md:py-32 text-center text-white">
                 <Title className="mb-4 uppercase leading-22">
                     BILLETTERIE DES<br/>
                     JEUX OLYMPIQUES de paris
@@ -16,7 +16,7 @@ const Hero: React.FC = () => {
                     Vivez les Jeux Olympiques 2024 en France avec<br/>
                     des e-tickets sécurisés !
                     </p>
-                <div className="flex gap-4 justify-center">
+                <div className="flex flex-col gap-4 justify-center sm:flex-row sm:gap-6">
                     <Button variant="primary" size="lg">
                         Acheter des billets
                     </Button>

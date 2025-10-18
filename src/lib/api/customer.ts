@@ -42,6 +42,7 @@ export class CustomerApi extends ApiClient {
 
   async getTickets(options: CustomerRequestOptions = {}): Promise<Ticket[]> {
       return [];
+      // TODO: Add this later
     // const path = options.path ?? ApiRoutes.CUSTOMERS_ME_TICKETS;
     //
     // return this.request<Ticket[]>(path, {

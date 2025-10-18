@@ -1,6 +1,6 @@
 export default function Footer() {
     return (
-        <footer className="bg-gray-900 text-gray-300 py-10 mt-16">
+        <footer className="bg-gray-900 text-gray-300 py-10">
             <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
                 {/* Section 1 : Logo & présentation */}
                 <div>
@@ -40,7 +40,7 @@ export default function Footer() {
             </div>
 
             <div className="border-t border-gray-700 mt-8 pt-4 text-center text-sm">
-                © {new Date().getFullYear()} Jeux Olympiques France — Tous droits réservés.
+                &copy; {new Date().getFullYear()} JO 2024 France. Tous droits réservés.
             </div>
         </footer>
     );

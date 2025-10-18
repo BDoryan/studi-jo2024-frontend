@@ -205,9 +205,6 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onRegisterClick }) => {
                                 <Button variant="primary" type="button" className="w-full" onClick={handleAccount}>
                                     Mon compte
                                 </Button>
-                                <Button variant="ghost" type="button" className="w-full" onClick={() => handleNavigate('/')}>
-                                    Accueil
-                                </Button>
                                 <Button variant="danger" type="button" className="w-full" onClick={handleLogout}>
                                     Se déconnecter
                                 </Button>

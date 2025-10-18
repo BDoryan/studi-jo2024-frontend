@@ -3,11 +3,25 @@ import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Title from '@/components/Title';
 import { Button } from '@/components/Button';
+import Card from '@/components/Card';
 import { useAuth } from '@/lib/auth';
 import { CustomerApi, CustomerProfile, HttpError, Ticket } from '@/lib/api';
 
 const GENERIC_ERROR_MESSAGE =
     'Impossible de récupérer vos informations pour le moment. Veuillez réessayer plus tard.';
+
+const pickFirstValue = (...values: Array<string | undefined | null>): string => {
+    for (const value of values) {
+        if (typeof value === 'string') {
+            const trimmed = value.trim();
+            if (trimmed.length > 0) {
+                return trimmed;
+            }
+        }
+    }
+
+    return '';
+};
 
 const formatTicketDate = (value?: string): string | null => {
     if (!value) {
@@ -30,67 +44,50 @@ const formatTicketDate = (value?: string): string | null => {
     }
 };
 
-const selectValue = (...candidates: Array<string | undefined | null>): string => {
-    for (const candidate of candidates) {
-        if (typeof candidate === 'string') {
-            const trimmed = candidate.trim();
-            if (trimmed.length > 0) {
-                return trimmed;
-            }
-        }
-    }
-
-    return '';
-};
-
 const Account: React.FC = () => {
     const navigate = useNavigate();
     const { logout, user: sessionUser } = useAuth();
     const accountApi = useMemo(() => new CustomerApi(), []);
     const [profile, setProfile] = useState<CustomerProfile | null>(null);
     const [tickets, setTickets] = useState<Ticket[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        let isActive = true;
+        let isMounted = true;
 
         const load = async () => {
-            if (!isActive) {
-                return;
-            }
-
             setLoading(true);
             setError(null);
 
             try {
-                const [nextProfile, nextTickets] = await Promise.all([
+                const [profileData, ticketsData] = await Promise.all([
                     accountApi.getProfile(),
                     accountApi.getTickets(),
                 ]);
 
-                if (!isActive) {
+                if (!isMounted) {
                     return;
                 }
 
-                setProfile(nextProfile);
-                setTickets(Array.isArray(nextTickets) ? nextTickets : []);
+                setProfile(profileData);
+                setTickets(Array.isArray(ticketsData) ? ticketsData : []);
             } catch (cause) {
-                if (!isActive) {
+                if (!isMounted) {
                     return;
                 }
 
                 let message = GENERIC_ERROR_MESSAGE;
 
-                if (cause instanceof HttpError && cause.message && cause.message.trim().length > 0) {
+                if (cause instanceof HttpError && cause.message?.trim()) {
                     message = cause.message;
-                } else if (cause instanceof Error && cause.message.trim().length > 0) {
+                } else if (cause instanceof Error && cause.message.trim()) {
                     message = cause.message;
                 }
 
                 setError(message);
             } finally {
-                if (isActive) {
+                if (isMounted) {
                     setLoading(false);
                 }
             }
@@ -99,7 +96,7 @@ const Account: React.FC = () => {
         void load();
 
         return () => {
-            isActive = false;
+            isMounted = false;
         };
     }, [accountApi]);
 
@@ -112,41 +109,39 @@ const Account: React.FC = () => {
         navigate('/offers');
     }, [navigate]);
 
-    const resolvedFirstName = useMemo(
-        () =>
-            selectValue(
-                sessionUser?.firstName,
-                profile?.firstname,
-                profile?.first_name,
-            ),
-        [profile, sessionUser],
+    const identity = useMemo(() => {
+        const firstName = pickFirstValue(
+            sessionUser?.firstName,
+            profile?.firstname,
+            profile?.first_name,
+        );
+        const lastName = pickFirstValue(
+            sessionUser?.lastName,
+            profile?.lastname,
+            profile?.last_name,
+        );
+        const email = pickFirstValue(sessionUser?.email, profile?.email);
+        const fullName = pickFirstValue(
+            sessionUser?.fullName,
+            `${firstName} ${lastName}`.trim(),
+            email,
+            'Client Jeux Olympiques',
+        );
+
+        return { firstName, lastName, email, fullName };
+    }, [profile, sessionUser]);
+
+    const personalInfo = useMemo(
+        () => [
+            { label: 'Prénom', value: identity.firstName || 'Non communiqué' },
+            { label: 'Nom', value: identity.lastName || 'Non communiqué' },
+            { label: 'Adresse e-mail', value: identity.email || 'Non communiquée' },
+        ],
+        [identity],
     );
 
-    const resolvedLastName = useMemo(
-        () =>
-            selectValue(
-                sessionUser?.lastName,
-                profile?.lastname,
-                profile?.last_name,
-            ),
-        [profile, sessionUser],
-    );
-
-    const resolvedEmail = useMemo(
-        () =>
-            selectValue(
-                sessionUser?.email,
-                profile?.email,
-            ),
-        [profile, sessionUser],
-    );
-
-    const displayFullName = selectValue(
-        sessionUser?.fullName,
-        `${resolvedFirstName} ${resolvedLastName}`.trim(),
-        resolvedEmail,
-        'Client Jeux Olympiques',
-    );
+    const isLoadingTickets = loading;
+    const hasTickets = !isLoadingTickets && tickets.length > 0;
 
     return (
         <div className="flex min-h-screen flex-col bg-gray-50">
@@ -159,10 +154,13 @@ const Account: React.FC = () => {
                                 Mon compte
                             </Title>
                             <p className="text-sm text-gray-600 sm:text-base">
-                                Heureux de vous retrouver, {displayFullName}. Retrouvez vos informations et vos billets
+                                Heureux de vous retrouver, {identity.fullName}. Retrouvez vos informations et vos billets
                                 en un clin d&apos;oeil.
                             </p>
                         </div>
+                        <Button type="button" variant="danger" onClick={handleLogout}>
+                            Se déconnecter
+                        </Button>
                     </div>
 
                     {error && (
@@ -172,34 +170,23 @@ const Account: React.FC = () => {
                     )}
 
                     <div className="grid gap-6 md:grid-cols-2">
-                        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                        <Card as="section">
                             <h2 className="text-lg font-semibold text-gray-900">Informations personnelles</h2>
                             {loading ? (
                                 <p className="mt-6 text-sm text-gray-500">Chargement de vos informations...</p>
                             ) : (
                                 <dl className="mt-6 space-y-4 text-sm text-gray-700">
-                                    <div>
-                                        <dt className="font-semibold text-gray-800">Prénom</dt>
-                                        <dd>{resolvedFirstName || 'Non communiqué'}</dd>
-                                    </div>
-                                    <div>
-                                        <dt className="font-semibold text-gray-800">Nom</dt>
-                                        <dd>{resolvedLastName || 'Non communiqué'}</dd>
-                                    </div>
-                                    <div>
-                                        <dt className="font-semibold text-gray-800">Adresse e-mail</dt>
-                                        <dd>{resolvedEmail || 'Non communiquée'}</dd>
-                                    </div>
+                                    {personalInfo.map((item) => (
+                                        <div key={item.label}>
+                                            <dt className="font-semibold text-gray-800">{item.label}</dt>
+                                            <dd>{item.value}</dd>
+                                        </div>
+                                    ))}
                                 </dl>
                             )}
-                            <div className="mt-5">
-                                <Button type="button" variant="danger" onClick={handleLogout} className={"w-full"}>
-                                    Se déconnecter
-                                </Button>
-                            </div>
-                        </section>
+                        </Card>
 
-                        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm flex flex-col items-center justify-center text-center">
+                        <Card as="section">
                             <h2 className="text-lg font-semibold text-gray-900">Réserver des billets</h2>
                             <p className="mt-3 text-sm text-gray-600">
                                 Envie de vivre d&apos;autres émotions ? Consultez les offres disponibles et réservez vos
@@ -213,22 +200,22 @@ const Account: React.FC = () => {
                             >
                                 Voir les offres
                             </Button>
-                        </section>
+                        </Card>
                     </div>
 
-                    <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                    <Card as="section">
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <h2 className="text-lg font-semibold text-gray-900">Mes billets</h2>
-                            {!loading && tickets.length > 0 && (
+                            {hasTickets && (
                                 <span className="text-sm font-medium text-primary-600">
                                     {tickets.length} {tickets.length > 1 ? 'billets' : 'billet'}
                                 </span>
                             )}
                         </div>
 
-                        {loading ? (
+                        {isLoadingTickets ? (
                             <p className="mt-6 text-sm text-gray-500">Chargement de vos billets...</p>
-                        ) : tickets.length === 0 ? (
+                        ) : !hasTickets ? (
                             <p className="mt-6 text-sm text-gray-600">
                                 Vous n&apos;avez pas encore de billets. Utilisez le bouton « Voir les offres » pour
                                 découvrir les prochaines disponibilités.
@@ -236,61 +223,50 @@ const Account: React.FC = () => {
                         ) : (
                             <ul className="mt-6 space-y-4">
                                 {tickets.map((ticket) => {
-                                    const formattedDate = formatTicketDate(ticket.sessionDate);
+                                    const details = [
+                                        { label: 'Date', value: formatTicketDate(ticket.sessionDate) },
+                                        { label: 'Lieu', value: ticket.venue },
+                                        { label: 'Catégorie', value: ticket.category },
+                                        {
+                                            label: 'Billets',
+                                            value:
+                                                typeof ticket.quantity === 'number'
+                                                    ? ticket.quantity.toString()
+                                                    : null,
+                                        },
+                                        { label: 'Statut', value: ticket.status },
+                                    ].filter(
+                                        (detail) =>
+                                            detail.value !== null &&
+                                            String(detail.value).trim().length > 0,
+                                    );
+
+                                    const reference = ticket.reference ? `Référence : ${ticket.reference}` : null;
                                     const title =
-                                        ticket.eventName && ticket.eventName.trim().length > 0
+                                        ticket.eventName?.trim().length
                                             ? ticket.eventName
                                             : `Billet ${ticket.reference ?? ticket.id}`;
 
                                     return (
-                                        <li
-                                            key={ticket.id}
-                                            className="rounded-2xl border border-gray-100 bg-gray-50 p-5 shadow-sm"
-                                        >
+                                        <Card as="li" key={ticket.id} variant="muted" padding="p-5">
                                             <p className="text-base font-semibold text-gray-900">{title}</p>
                                             <div className="mt-3 space-y-1 text-sm text-gray-600">
-                                                {formattedDate && (
-                                                    <p>
-                                                        <span className="font-semibold text-gray-700">Date :</span>{' '}
-                                                        {formattedDate}
+                                                {details.map((detail) => (
+                                                    <p key={`${ticket.id}-${detail.label}`}>
+                                                        <span className="font-semibold text-gray-700">
+                                                            {detail.label} :
+                                                        </span>{' '}
+                                                        {detail.value}
                                                     </p>
-                                                )}
-                                                {ticket.venue && (
-                                                    <p>
-                                                        <span className="font-semibold text-gray-700">Lieu :</span>{' '}
-                                                        {ticket.venue}
-                                                    </p>
-                                                )}
-                                                {ticket.category && (
-                                                    <p>
-                                                        <span className="font-semibold text-gray-700">Catégorie :</span>{' '}
-                                                        {ticket.category}
-                                                    </p>
-                                                )}
-                                                {typeof ticket.quantity === 'number' && (
-                                                    <p>
-                                                        <span className="font-semibold text-gray-700">Billets :</span>{' '}
-                                                        {ticket.quantity}
-                                                    </p>
-                                                )}
-                                                {ticket.status && (
-                                                    <p>
-                                                        <span className="font-semibold text-gray-700">Statut :</span>{' '}
-                                                        {ticket.status}
-                                                    </p>
-                                                )}
-                                                {ticket.reference && (
-                                                    <p className="text-xs text-gray-500">
-                                                        Référence : {ticket.reference}
-                                                    </p>
-                                                )}
+                                                ))}
+                                                {reference && <p className="text-xs text-gray-500">{reference}</p>}
                                             </div>
-                                        </li>
+                                        </Card>
                                     );
                                 })}
                             </ul>
                         )}
-                    </section>
+                    </Card>
                 </div>
             </main>
         </div>

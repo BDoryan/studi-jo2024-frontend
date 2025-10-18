@@ -11,6 +11,7 @@ import {
 } from "@/lib/api";
 import {translate, translateError} from "@/lib/i18n";
 import { useAuth } from '@/lib/auth';
+import Layout from "@/components/Layout";
 
 type LoginFormState = {
     email: string;
@@ -303,8 +304,7 @@ const Login: React.FC = () => {
     }
 
     return (
-        <div className="flex min-h-screen flex-col bg-gray-50">
-            <Header/>
+        <Layout>
             <main className="flex flex-1">
                 <div className="flex w-full flex-col lg:grid lg:min-h-full lg:grid-cols-2">
                     <section
@@ -401,7 +401,7 @@ const Login: React.FC = () => {
                     </section>
                 </div>
             </main>
-        </div>
+        </Layout>
     );
 };
 
