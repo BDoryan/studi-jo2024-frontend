@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import clsx from 'clsx';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '@/components/Header';
 import Title from '@/components/Title';
@@ -333,7 +334,7 @@ const Account: React.FC = () => {
 
         try {
             const resolvedTicketSecret = pickFirstValue(
-                ticket.ticketSecret,
+                ticket.ticket_secret,
                 ticket.ticket_secret,
             )
                 ?.trim()
@@ -416,10 +417,6 @@ const Account: React.FC = () => {
             doc.setFontSize(26);
             doc.setFont('helvetica', 'bold');
             doc.text(title, margin + 24, margin + 80, { maxWidth: pageWidth - margin * 2 - 48 });
-
-            doc.setFontSize(13);
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Identifiant billet : ${ticketIdLabel}`, margin + 24, margin + 110);
 
             doc.setFillColor(255, 255, 255);
             const detailsTop = margin + 200;
@@ -578,11 +575,11 @@ const Account: React.FC = () => {
                             <ul className="mt-6 space-y-4">
                                 {tickets.map((ticket, index) => {
                                     const resolvedTicketId = ticket.ticketId ?? ticket.ticket_id ?? null;
-                                    const ticketSecret = pickFirstValue(
-                                        ticket.ticketSecret,
+                                    const ticket_secret = pickFirstValue(
+                                        ticket.ticket_secret,
                                         ticket.ticket_secret,
                                     );
-                                    const normalizedTicketSecret = ticketSecret?.trim() ?? '';
+                                    const normalizedTicketSecret = ticket_secret?.trim() ?? '';
                                     const qrCodeUrl = normalizedTicketSecret
                                         ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(normalizedTicketSecret)}`
                                         : null;
@@ -602,6 +599,13 @@ const Account: React.FC = () => {
                                         ticket.transactionStatus,
                                         ticket.transaction_status,
                                     );
+                                    const ticketStatusValue = pickFirstValue(ticket.status);
+                                    const normalizedTicketStatus = ticketStatusValue
+                                        ? ticketStatusValue.toUpperCase()
+                                        : '';
+                                    const isTicketUsed =
+                                        normalizedTicketStatus.includes('USED') ||
+                                        normalizedTicketStatus.includes('SCANNED');
                                     const details = [
                                         {
                                             label: 'Montant payé',
@@ -668,7 +672,7 @@ const Account: React.FC = () => {
                                         };
                                     };
 
-                                    const ticketStatusBadge = resolveBadgeClasses(ticket.status);
+                                    const ticketStatusBadge = resolveBadgeClasses(ticketStatusValue);
                                     const transactionStatusBadge = resolveBadgeClasses(
                                         transactionStatusValue,
                                     );
@@ -679,7 +683,10 @@ const Account: React.FC = () => {
                                             key={String(resolvedTicketId ?? normalizedTicketSecret ?? index)}
                                             variant="default"
                                             padding="p-0"
-                                            className="overflow-hidden border-primary-100 bg-gradient-to-br from-white via-primary-50/50 to-white shadow-lg"
+                                            className={clsx(
+                                                'overflow-hidden border-primary-100 bg-gradient-to-br from-white via-primary-50/50 to-white shadow-lg',
+                                                isTicketUsed && 'opacity-70',
+                                            )}
                                         >
                                             <div className="flex flex-col">
                                                 <div className="relative bg-gradient-to-r from-primary-600 to-primary-500 px-6 py-6 text-white">
@@ -689,11 +696,6 @@ const Account: React.FC = () => {
                                                                 Billet officiel
                                                             </p>
                                                             <p className="mt-2 text-2xl font-semibold">{title}</p>
-                                                            {resolvedTicketId != null && (
-                                                                <p className="mt-1 text-sm text-primary-50/80">
-                                                                    Identifiant billet : {resolvedTicketId}
-                                                                </p>
-                                                            )}
                                                         </div>
                                                     </div>
                                                     {normalizedTicketSecret && (
@@ -733,16 +735,22 @@ const Account: React.FC = () => {
                                                 </div>
 
                                                 <div className="flex flex-col gap-3 border-t border-dashed border-primary-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-                                                    <Button
-                                                        type="button"
-                                                        variant="secondary"
-                                                        className="w-full sm:w-auto"
-                                                        onClick={() => {
-                                                            void handleDownloadTicket(ticket, index);
-                                                        }}
-                                                    >
-                                                        Télécharger mon billet
-                                                    </Button>
+                                                    {isTicketUsed ? (
+                                                        <p className="text-sm font-medium text-rose-600">
+                                                            Ce billet a déjà été scanné.
+                                                        </p>
+                                                    ) : (
+                                                        <Button
+                                                            type="button"
+                                                            variant="secondary"
+                                                            className="w-full sm:w-auto"
+                                                            onClick={() => {
+                                                                void handleDownloadTicket(ticket, index);
+                                                            }}
+                                                        >
+                                                            Télécharger mon billet
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </div>
                                         </Card>

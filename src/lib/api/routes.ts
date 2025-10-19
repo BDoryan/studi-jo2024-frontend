@@ -8,6 +8,8 @@ export class ApiRoutes {
     static readonly OFFERS = '/offers';
     static readonly PAYMENTS_CHECKOUT = '/payments/checkout';
     static readonly PAYMENTS_STATUS = '/payments/status';
+    static readonly TICKETS_SCAN = '/tickets/scan';
+    static readonly TICKETS_VALIDATE = '/tickets/validate';
 
     static list(): string[] {
         return [
@@ -20,6 +22,8 @@ export class ApiRoutes {
             ApiRoutes.PAYMENTS_CHECKOUT,
             ApiRoutes.OFFERS,
             ApiRoutes.PAYMENTS_STATUS,
+            ApiRoutes.TICKETS_SCAN,
+            ApiRoutes.TICKETS_VALIDATE,
         ];
     }
 

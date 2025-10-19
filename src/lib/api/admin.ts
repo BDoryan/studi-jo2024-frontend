@@ -1,10 +1,10 @@
 import { ApiClient, ApiClientConfig, RequestOptions } from './client';
 import { ApiRoutes } from './routes';
 
-export type AdminIdentifier = string | number;
+export type Identifier = number;
 
 export interface AdminOffer {
-    id: AdminIdentifier;
+    id: Identifier;
     name: string;
     description?: string;
     price?: number;
@@ -28,6 +28,39 @@ export interface AdminProfile {
     full_name?: string;
     firstName?: string;
     lastName?: string;
+    [key: string]: unknown;
+}
+
+export interface TicketScanRequest {
+    ticket_secret: string;
+}
+
+export interface TicketValidateRequest {
+    ticket_secret: string;
+}
+
+export interface TicketScanCustomer {
+    id: Identifier;
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    [key: string]: unknown;
+}
+
+export interface TicketScanResponse {
+    ticketId: Identifier;
+    status: string;
+    entries_allowed?: number;
+    offer_name?: string;
+    amount?: number;
+    created_at?: string;
+    customer?: TicketScanCustomer;
+    [key: string]: unknown;
+}
+
+export interface ApiMessageResponse {
+    status: string;
+    message: string;
     [key: string]: unknown;
 }
 
@@ -115,7 +148,7 @@ export class AdminApi extends ApiClient {
     }
 
     async updateOffer(
-        id: AdminIdentifier,
+        id: Identifier,
         payload: AdminOfferInput,
         options: RequestOptions = {},
     ): Promise<AdminOffer> {
@@ -131,7 +164,7 @@ export class AdminApi extends ApiClient {
         );
     }
 
-    async deleteOffer(id: AdminIdentifier, options: RequestOptions = {}): Promise<void> {
+    async deleteOffer(id: Identifier, options: RequestOptions = {}): Promise<void> {
         const path = ApiRoutes.offerById(id);
 
         await this.request<void>(
@@ -143,7 +176,7 @@ export class AdminApi extends ApiClient {
         );
     }
 
-    async getOffer(id: AdminIdentifier, options: RequestOptions = {}): Promise<AdminOffer> {
+    async getOffer(id: Identifier, options: RequestOptions = {}): Promise<AdminOffer> {
         const path = ApiRoutes.offerById(id);
 
         return this.request<AdminOffer>(
@@ -151,6 +184,34 @@ export class AdminApi extends ApiClient {
             this.withAuth({
                 ...options,
                 method: 'GET',
+            }),
+        );
+    }
+
+    async scanTicket(
+        payload: TicketScanRequest,
+        options: RequestOptions = {},
+    ): Promise<TicketScanResponse> {
+        return this.request<TicketScanResponse>(
+            ApiRoutes.TICKETS_SCAN,
+            this.withAuth({
+                ...options,
+                method: 'POST',
+                body: payload,
+            }),
+        );
+    }
+
+    async validateTicket(
+        payload: TicketValidateRequest,
+        options: RequestOptions = {},
+    ): Promise<ApiMessageResponse> {
+        return this.request<ApiMessageResponse>(
+            ApiRoutes.TICKETS_VALIDATE,
+            this.withAuth({
+                ...options,
+                method: 'POST',
+                body: payload,
             }),
         );
     }

@@ -17,7 +17,7 @@ export interface CustomerProfile extends JsonRecord {
 export interface Ticket extends JsonRecord {
   ticketId?: number;
   ticket_id?: number;
-  ticketSecret?: string;
+  ticket_secret?: string;
   ticket_secret?: string;
   status?: string;
   entriesAllowed?: number;

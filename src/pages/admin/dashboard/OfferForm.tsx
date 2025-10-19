@@ -2,14 +2,14 @@ import React, {useCallback, useState} from 'react';
 import Card from '@/components/Card';
 import Title from '@/components/Title';
 import {Button} from '@/components/Button';
-import {AdminApi, AdminOffer, AdminIdentifier, AdminOfferInput} from '@/lib/api';
+import {AdminApi, AdminOffer, Identifier, AdminOfferInput} from '@/lib/api';
 import {translateMessage} from '@/lib/i18n';
 import type {OfferFormState} from './AdminDashboard';
 
 interface OfferFormProps {
     adminApi: AdminApi;
-    activeOfferId: AdminIdentifier | null;
-    setActiveOfferId: (id: AdminIdentifier | null) => void;
+    activeOfferId: Identifier | null;
+    setActiveOfferId: (id: Identifier | null) => void;
     offers: AdminOffer[];
     setOffers: React.Dispatch<React.SetStateAction<AdminOffer[]>>;
     formState: OfferFormState;

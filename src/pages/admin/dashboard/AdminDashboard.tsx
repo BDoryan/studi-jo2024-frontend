@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Card from '@/components/Card';
 import Title from '@/components/Title';
 import { Button } from '@/components/Button';
-import { AdminApi, AdminIdentifier, AdminOffer, AdminOfferInput, HttpError } from '@/lib/api';
+import { AdminApi, Identifier, AdminOffer, AdminOfferInput, HttpError } from '@/lib/api';
 import { useAdminAuth } from '@/lib/admin';
 import { translateError, translateMessage } from '@/lib/i18n';
 import { ADMIN_TICKET_SCANNER_PATH } from '@/pages/admin/constants';
@@ -60,7 +60,7 @@ const AdminDashboard: React.FC = () => {
     const [listError, setListError] = useState<string | null>(null);
 
     const [formState, setFormState] = useState<OfferFormState>(initialForm);
-    const [activeOfferId, setActiveOfferId] = useState<AdminIdentifier | null>(null);
+    const [activeOfferId, setActiveOfferId] = useState<Identifier | null>(null);
 
     const refreshOffers = useCallback(async () => {
         setListError(null);
