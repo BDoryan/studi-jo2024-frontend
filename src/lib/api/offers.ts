@@ -1,7 +1,7 @@
 import { ApiClient, RequestOptions } from './client';
 import { ApiRoutes } from './routes';
 
-export type OfferIdentifier = string | number;
+export type OfferIdentifier = number;
 
 export interface Offer {
   id: OfferIdentifier;

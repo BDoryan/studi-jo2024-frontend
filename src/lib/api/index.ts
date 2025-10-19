@@ -4,3 +4,4 @@ export * from './customer';
 export * from './routes';
 export * from './admin';
 export * from './offers';
+export * from './payments';

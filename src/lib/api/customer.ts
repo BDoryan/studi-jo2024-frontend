@@ -15,15 +15,20 @@ export interface CustomerProfile extends JsonRecord {
 }
 
 export interface Ticket extends JsonRecord {
-  id: string;
-  reference?: string;
-  eventName?: string;
-  sessionDate?: string;
-  venue?: string;
-  seat?: string;
-  category?: string;
-  quantity?: number;
+  ticketId?: number;
+  ticket_id?: number;
+  ticketSecret?: string;
+  ticket_secret?: string;
   status?: string;
+  entriesAllowed?: number;
+  entries_allowed?: number;
+  offerName?: string;
+  offer_name?: string;
+  amount?: number;
+  transactionStatus?: string;
+  transaction_status?: string;
+  createdAt?: string;
+  created_at?: string;
 }
 
 export interface CustomerRequestOptions extends Omit<RequestOptions, 'body' | 'method'> {
@@ -41,13 +46,11 @@ export class CustomerApi extends ApiClient {
   }
 
   async getTickets(options: CustomerRequestOptions = {}): Promise<Ticket[]> {
-      return [];
-      // TODO: Add this later
-    // const path = options.path ?? ApiRoutes.CUSTOMERS_ME_TICKETS;
-    //
-    // return this.request<Ticket[]>(path, {
-    //   ...options,
-    //   method: 'GET',
-    // });
+    const path = options.path ?? ApiRoutes.CUSTOMERS_ME_TICKETS;
+
+    return this.request<Ticket[]>(path, {
+      ...options,
+      method: 'GET',
+    });
   }
 }
