@@ -62,7 +62,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onRegisterClick }) => {
     return (
         <header className="sticky top-0 z-40 bg-white/90 shadow backdrop-blur">
             <div className="mx-auto flex items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-                <Link to="/" className="flex items-center gap-4">
+                <Link to="/" className="flex items-center gap-4 flex-1 ">
                     <img src="/imgs/logo.png" alt="Jeux Olympiques 2024" className="h-12 w-12 sm:h-14 sm:w-14" />
                     <img
                         src="/imgs/logo-paralympiques.png"
@@ -71,7 +71,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onRegisterClick }) => {
                     />
                 </Link>
 
-                <nav className="hidden items-center gap-6 lg:flex">
+                <nav className="hidden items-center gap-6 lg:flex flex-1 justify-center">
                     {navigationLinks.map((link) => (
                         <Link
                             key={link.to}
@@ -92,7 +92,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onRegisterClick }) => {
                 </nav>
 
                 {isAuthenticated ? (
-                    <div className="hidden items-center gap-3 lg:flex">
+                    <div className="hidden items-center gap-3 lg:flex flex-1  justify-end">
                         <Button variant="primary" type="button" onClick={handleAccount}>
                             Mon compte
                         </Button>
@@ -101,7 +101,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onRegisterClick }) => {
                         </Button>
                     </div>
                 ) : (
-                    <div className="hidden items-center gap-2 lg:flex">
+                    <div className="hidden items-center gap-2 lg:flex flex-1 justify-end">
                         <Button variant="primary" type="button" onClick={handleLogin}>
                             Se connecter
                         </Button>
