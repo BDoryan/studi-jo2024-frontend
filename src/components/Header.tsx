@@ -81,14 +81,6 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onRegisterClick }) => {
                             {link.label}
                         </Link>
                     ))}
-                    {isAuthenticated && (
-                        <Link
-                            to="/account"
-                            className="text-sm font-semibold uppercase tracking-wide text-primary-500 transition hover:text-primary-600"
-                        >
-                            Mon compte
-                        </Link>
-                    )}
                 </nav>
 
                 {isAuthenticated ? (

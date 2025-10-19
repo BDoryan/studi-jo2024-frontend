@@ -9,12 +9,13 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export const Button: React.FC<ButtonProps> = ({
-          children,
-          variant = "primary",
-          size = "md",
-          className = "",
-          ...props
-      }) => {
+                                                  children,
+                                                  variant = "primary",
+                                                  size = "md",
+                                                  className = "",
+                                                  disabled = false,
+                                                  ...props
+                                              }) => {
     const base = "  inline-flex items-center justify-center font-medium rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none"
 
     const variants: Record<ButtonVariant, string> = {
@@ -32,7 +33,7 @@ export const Button: React.FC<ButtonProps> = ({
         lg: "py-3 px-6 text-xl",
     }
 
-    const classes = `${base} ${variants[variant]} ${sizes[size]} ${className}`
+    const classes = `${base} ${variants[variant]} ${sizes[size]} ${className} ${disabled ? 'cursor-not-allowed opacity-[.25]' : ''}`
 
     return (
         <button className={classes} {...props}>
