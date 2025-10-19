@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Layout from '@/components/Layout';
 import Title from '@/components/Title';
 import { Button } from '@/components/Button';
 import Card from '@/components/Card';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { Offer, OfferApi } from '@/lib/api';
+import { Offer, OfferApi, OfferIdentifier, PaymentsApi } from '@/lib/api';
 
 const parseNumber = (value: unknown): number | null => {
     if (typeof value === 'number' && Number.isFinite(value)) {
@@ -24,7 +24,10 @@ const Offers: React.FC = () => {
     const [offers, setOffers] = useState<Offer[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [checkoutError, setCheckoutError] = useState<string | null>(null);
+    const [processingOfferId, setProcessingOfferId] = useState<OfferIdentifier | null>(null);
     const offerApi = useMemo(() => new OfferApi(), []);
+    const paymentsApi = useMemo(() => new PaymentsApi(), []);
 
     useEffect(() => {
         let isActive = true;
@@ -40,6 +43,7 @@ const Offers: React.FC = () => {
 
                 setOffers(Array.isArray(data) ? data : []);
                 setError(null);
+                setCheckoutError(null);
             } catch (err) {
                 console.error('Failed to fetch offers', err);
                 if (isActive) {
@@ -59,6 +63,39 @@ const Offers: React.FC = () => {
             isActive = false;
         };
     }, [offerApi]);
+
+    const handleCheckout = useCallback(
+        async (offer: Offer) => {
+            if (!offer?.id) {
+                setCheckoutError("Cette offre est indisponible pour le moment.");
+                return;
+            }
+
+            setCheckoutError(null);
+            setProcessingOfferId(offer.id);
+
+            try {
+                const response = await paymentsApi.checkout({ offer_id: offer.id });
+
+                const checkout_url =
+                    response
+                        ? response.checkout_url.trim()
+                        : '';
+
+                if (!checkout_url) {
+                    throw new Error('Missing checkout_url in payment response');
+                }
+
+                window.location.assign(checkout_url);
+            } catch (err) {
+                console.error('Failed to start checkout', err);
+                setCheckoutError("Impossible de lancer le paiement. Veuillez réessayer.");
+            } finally {
+                setProcessingOfferId(null);
+            }
+        },
+        [paymentsApi],
+    );
 
     return (
         <Layout>
@@ -86,6 +123,12 @@ const Offers: React.FC = () => {
                 {error && !isLoading && (
                     <div className="w-full max-w-6xl mb-8 rounded-xl border border-red-200 bg-red-50 px-6 py-4 text-red-800">
                         {error}
+                    </div>
+                )}
+
+                {checkoutError && !isLoading && !error && (
+                    <div className="w-full max-w-6xl mb-8 rounded-xl border border-red-200 bg-red-50 px-6 py-4 text-red-800">
+                        {checkoutError}
                     </div>
                 )}
 
@@ -136,10 +179,13 @@ const Offers: React.FC = () => {
                                         )}
                                     </div>
                                     <Button
-                                        disabled={!isAuthenticated || !hasStock}
+                                        disabled={
+                                            !isAuthenticated || !hasStock || processingOfferId === offer.id
+                                        }
+                                        onClick={() => handleCheckout(offer)}
                                         variant="secondary"
                                     >
-                                        Acheter cette offre
+                                        {processingOfferId === offer.id ? 'Redirection…' : 'Acheter cette offre'}
                                     </Button>
                                 </Card>
                             );

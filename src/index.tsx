@@ -53,6 +53,22 @@ const AppRouter: React.FC = () => {
           </RequireAuth>
         }
       />
+      <Route
+        path="/account/success"
+        element={
+          <RequireAuth>
+            <Account />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/account/cancel"
+        element={
+          <RequireAuth>
+            <Account />
+          </RequireAuth>
+        }
+      />
     </Routes>
   );
 };
