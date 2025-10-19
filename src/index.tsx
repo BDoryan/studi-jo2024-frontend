@@ -7,7 +7,10 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Account from "@/pages/Account";
 import Offers from "@/pages/Offers";
+import NotFound from "@/pages/NotFound";
 import { AuthProvider, RequireAuth, useAuth } from '@/lib/auth';
+import AdminRouter from '@/pages/admin/AdminRouter';
+import { ADMIN_ROOT_PATH } from '@/pages/admin/constants';
 
 const AppRouter: React.FC = () => {
   const { isLoading } = useAuth();
@@ -40,6 +43,8 @@ const AppRouter: React.FC = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/offers" element={<Offers />} />
+      <Route path={`${ADMIN_ROOT_PATH}/*`} element={<AdminRouter />} />
+      <Route path="*" element={<NotFound />} />
       <Route
         path="/account"
         element={

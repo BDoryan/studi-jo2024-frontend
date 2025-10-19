@@ -18,14 +18,14 @@ interface User {
     email: string;
     firstName: string;
     lastName: string;
-    fullName: string;
+    full_name: string;
     role: string;
 }
 
 interface SessionResponse {
     id?: string | number;
     email?: string;
-    fullName?: string;
+    full_name?: string;
     firstname?: string;
     lastname?: string;
     first_name?: string;
@@ -109,9 +109,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
                 const normalisedLastName = rawLastName ?? '';
                 const email = typeof data.email === 'string' ? data.email : '';
 
-                const fullNameFromResponse =
-                    (typeof data.fullName === 'string' && data.fullName.trim().length > 0
-                        ? data.fullName
+                const full_nameFromResponse =
+                    (typeof data.full_name === 'string' && data.full_name.trim().length > 0
+                        ? data.full_name
                         : '') ||
                     `${normalisedFirstName} ${normalisedLastName}`.trim();
 
@@ -128,7 +128,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
                     email,
                     firstName: normalisedFirstName,
                     lastName: normalisedLastName,
-                    fullName: fullNameFromResponse || email,
+                    full_name: full_nameFromResponse || email,
                     role: resolvedRole,
                 });
 

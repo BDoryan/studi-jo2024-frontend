@@ -121,14 +121,14 @@ const Account: React.FC = () => {
             profile?.last_name,
         );
         const email = pickFirstValue(sessionUser?.email, profile?.email);
-        const fullName = pickFirstValue(
-            sessionUser?.fullName,
+        const full_name = pickFirstValue(
+            sessionUser?.full_name,
             `${firstName} ${lastName}`.trim(),
             email,
             'Client Jeux Olympiques',
         );
 
-        return { firstName, lastName, email, fullName };
+        return { firstName, lastName, email, full_name };
     }, [profile, sessionUser]);
 
     const personalInfo = useMemo(
@@ -154,7 +154,7 @@ const Account: React.FC = () => {
                                 Mon compte
                             </Title>
                             <p className="text-sm text-gray-600 sm:text-base">
-                                Heureux de vous retrouver, {identity.fullName}. Retrouvez vos informations et vos billets
+                                Heureux de vous retrouver, {identity.full_name}. Retrouvez vos informations et vos billets
                                 en un clin d&apos;oeil.
                             </p>
                         </div>
