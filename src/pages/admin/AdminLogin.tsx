@@ -214,7 +214,8 @@ export const AdminLogin: React.FC = () => {
                             htmlFor="admin-email"
                             className="text-xs font-semibold uppercase tracking-wide text-gray-700"
                         >
-                            {fieldLabels.email}
+                            {fieldLabels.email}{' '}
+                            <span className="text-red-600">*</span>
                         </label>
                         <input
                             id="admin-email"
@@ -242,7 +243,8 @@ export const AdminLogin: React.FC = () => {
                             htmlFor="admin-password"
                             className="text-xs font-semibold uppercase tracking-wide text-gray-700"
                         >
-                            {fieldLabels.password}
+                            {fieldLabels.password}{' '}
+                            <span className="text-red-600">*</span>
                         </label>
                         <input
                             id="admin-password"

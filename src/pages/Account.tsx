@@ -568,7 +568,7 @@ const Account: React.FC = () => {
                             <p className="mt-6 text-sm text-gray-500">Chargement de vos billets...</p>
                         ) : !hasTickets ? (
                             <p className="mt-6 text-sm text-gray-600">
-                                Vous n&apos;avez pas encore de billets. Utilisez le bouton « Voir les offres » pour
+                                Vous n&apos;avez pas encore de billets. Utilisez le bouton "Voir les offres" pour
                                 découvrir les prochaines disponibilités.
                             </p>
                         ) : (

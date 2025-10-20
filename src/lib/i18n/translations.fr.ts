@@ -53,7 +53,7 @@ export const translations: TranslationDictionary = {
     admin_dashboard_feedback_create_failed: "Impossible de créer l'offre.",
     admin_dashboard_feedback_update_failed: "Impossible de mettre à jour l'offre.",
     admin_dashboard_feedback_delete_failed: "La suppression de l'offre a échoué.",
-    admin_dashboard_confirm_delete: "Supprimer définitivement l'offre « {{name}} » ?",
+    admin_dashboard_confirm_delete: "Supprimer définitivement l'offre \"{{name}}\" ?",
     admin_field_offer_name: 'Nom de l’offre',
     admin_field_offer_description: 'Description',
     admin_field_offer_price: 'Prix (EUR)',

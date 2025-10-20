@@ -135,7 +135,7 @@ const Login: React.FC = () => {
             ): string => {
                 const label = fieldKey ? fieldLabels[fieldKey] : undefined;
                 const displayField = label
-                    ? `Le champ « ${label} »`
+                    ? `Le champ "${label}"`
                     : typeof params.field === 'string'
                         ? String(params.field)
                         : 'Ce champ';
@@ -328,7 +328,10 @@ const Login: React.FC = () => {
                             <form className="mt-8 flex flex-col gap-6" onSubmit={handleSubmit}>
                                 {renderAlert(status)}
                                 <label className="flex flex-col gap-2 text-left">
-                                    <span className="text-sm font-semibold uppercase text-gray-600">Adresse e-mail</span>
+                                    <span className="text-sm font-semibold uppercase text-gray-600">
+                                        Adresse e-mail{' '}
+                                        <span className="text-red-600">*</span>
+                                    </span>
                                     <input
                                         type="email"
                                         name="email"
@@ -352,7 +355,10 @@ const Login: React.FC = () => {
                                     )}
                                 </label>
                                 <label className="flex flex-col gap-2 text-left">
-                                    <span className="text-sm font-semibold uppercase text-gray-600">Mot de passe</span>
+                                    <span className="text-sm font-semibold uppercase text-gray-600">
+                                        Mot de passe{' '}
+                                        <span className="text-red-600">*</span>
+                                    </span>
                                     <input
                                         type="password"
                                         name="password"

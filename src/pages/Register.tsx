@@ -163,7 +163,7 @@ const Register: React.FC = () => {
                 const enriched = {
                     ...params,
                     field: label
-                        ? `Le champ « ${label} »`
+                        ? `Le champ "${label}"`
                         : typeof params.field === 'string'
                             ? String(params.field)
                             : 'Ce champ',
@@ -379,7 +379,10 @@ const Register: React.FC = () => {
                                 {renderAlert(status)}
                                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                     <label className="flex flex-col gap-2 text-left">
-                                        <span className="text-sm font-semibold uppercase text-gray-600">Prénom</span>
+                                        <span className="text-sm font-semibold uppercase text-gray-600">
+                                            Prénom{' '}
+                                            <span className="text-red-600">*</span>
+                                        </span>
                                         <input
                                             type="text"
                                             name="firstName"
@@ -403,7 +406,10 @@ const Register: React.FC = () => {
                                         )}
                                     </label>
                                     <label className="flex flex-col gap-2 text-left">
-                                        <span className="text-sm font-semibold uppercase text-gray-600">Nom</span>
+                                        <span className="text-sm font-semibold uppercase text-gray-600">
+                                            Nom{' '}
+                                            <span className="text-red-600">*</span>
+                                        </span>
                                         <input
                                             type="text"
                                             name="lastName"
@@ -428,8 +434,10 @@ const Register: React.FC = () => {
                                     </label>
                                 </div>
                                 <label className="flex flex-col gap-2 text-left">
-                                    <span
-                                        className="text-sm font-semibold uppercase text-gray-600">Adresse e-mail</span>
+                                    <span className="text-sm font-semibold uppercase text-gray-600">
+                                        Adresse e-mail{' '}
+                                        <span className="text-red-600">*</span>
+                                    </span>
                                     <input
                                         type="email"
                                         name="email"
@@ -454,8 +462,10 @@ const Register: React.FC = () => {
                                 </label>
                                 <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                                     <label className="flex flex-col gap-2 text-left">
-                                        <span
-                                            className="text-sm font-semibold uppercase text-gray-600">Mot de passe</span>
+                                        <span className="text-sm font-semibold uppercase text-gray-600">
+                                            Mot de passe{' '}
+                                            <span className="text-red-600">*</span>
+                                        </span>
                                         <input
                                             type="password"
                                             name="password"
@@ -479,8 +489,10 @@ const Register: React.FC = () => {
                                         )}
                                     </label>
                                     <label className="flex flex-col gap-2 text-left">
-                                        <span
-                                            className="text-sm font-semibold uppercase text-gray-600">Confirmation du mot de passe</span>
+                                        <span className="text-sm font-semibold uppercase text-gray-600">
+                                            Confirmation du mot de passe{' '}
+                                            <span className="text-red-600">*</span>
+                                        </span>
                                         <input
                                             type="password"
                                             name="confirm_password"
@@ -517,7 +529,9 @@ const Register: React.FC = () => {
                                         } focus:outline-none`}
                                     />
                                     <span className="text-sm text-gray-700">
-                                        J’accepte le traitement de mes données personnelles conformément à la politique de confidentialité.
+                                        J’accepte le traitement de mes données personnelles conformément à la politique
+                                        de confidentialité.{' '}
+                                        <span className="text-red-600">*</span>
                                     </span>
                                 </label>
                                 {errors.rgpdConsent && (
