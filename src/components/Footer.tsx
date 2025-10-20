@@ -60,35 +60,17 @@ export default function Footer() {
                         Ressources &amp; actualités
                     </h3>
                     <ul className="mt-4 space-y-2 text-sm text-gray-100/90">
-                        <li>
-                            <a
-                                href="https://www.paris2024.org/fr/calendrier-des-epreuves/"
-                                className="transition hover:text-gray-200"
-                                target="_blank"
-                                rel="noreferrer"
-                            >
-                                Calendrier des épreuves
-                            </a>
-                        </li>
-                        <li>
-                            <a
-                                href="https://tickets.paris2024.org/fr/faq"
-                                className="transition hover:text-gray-200"
-                                target="_blank"
-                                rel="noreferrer"
-                            >
-                                FAQ billetterie
-                            </a>
-                        </li>
-                        <li><a href="https://www.instagram.com/paris2024" className="transition hover:text-gray-200" target="_blank" rel="noreferrer">Instagram officiel</a></li>
-                        <li><a href="https://twitter.com/Paris2024" className="transition hover:text-gray-200" target="_blank" rel="noreferrer">X (Twitter) @Paris2024</a></li>
-                        <li><a href="https://www.youtube.com/paris2024" className="transition hover:text-gray-200" target="_blank" rel="noreferrer">YouTube Paris 2024</a></li>
+                        <li><a href="https://www.instagram.com/jeuxolympiques/" className="transition hover:text-gray-200" target="_blank" rel="noreferrer">Instagram officiel</a></li>
+                        <li><a href="https://www.facebook.com/jeuxolympiques" className="transition hover:text-gray-200" target="_blank" rel="noreferrer">Facebook officiel</a></li>
+                        <li><a href="https://twitter.com/jeuxolympiques" className="transition hover:text-gray-200" target="_blank" rel="noreferrer">Twitter officiel</a></li>
+                        <li><a href="https://www.olympics.com/cio/paris-2024" className="transition hover:text-gray-200" target="_blank" rel="noreferrer">Site officiel Paris 2024</a></li>
                     </ul>
                 </div>
             </div>
 
-            <div className="border-t border-primary-400/60 px-6 py-4 text-center text-xs text-gray-50/80 sm:text-sm">
-                &copy; {new Date().getFullYear()} JO 2024 France — Billetterie officielle. Tous droits réservés.
+            <div className="border-t font-extrabold border-primary-400/60 px-6 py-4 text-center text-xs text-gray-50/80 sm:text-sm">
+                Ce site a été réalisé uniquement dans le cadre d'un projet pour les examens de fin d'année. <br />
+                Il n'est en aucun cas affilié aux Jeux Olympiques et Paralympiques de Paris 2024 ou à toute organisation officielle.
             </div>
         </footer>
     );
