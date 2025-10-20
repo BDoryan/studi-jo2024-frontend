@@ -27,12 +27,16 @@ L’application est accessible sur `http://localhost:5173`.
 - `npm run dev` : serveur de développement avec hot reload.
 - `npm run build` : build de production dans `dist/`.
 - `npm run preview` : prévisualisation locale du build.
+- `npm run test` : exécute la suite de tests (Vitest + Testing Library) en mode CI.
+- `npm run test:watch` : lance les tests en mode watch interactif.
 
 ## Structure rapide
 - `src/components` : composants génériques (Header, Footer, Button, etc.).
 - `src/blocks` : sections de page réutilisables (Hero, Presentation…).
 - `src/pages` : pages complètes utilisées par le routeur.
 - `src/lib` : helpers, logique d’authentification et clients API.
+- `src/pages/__tests__` : tests d’intégration couvrant les parcours principaux (connexion, inscription, compte).
+- `src/tests` : utilitaires de test partagés (helpers de rendu avec router, etc.).
 - `public/imgs` : assets statiques (logos, visuels).
 
 ## Backend

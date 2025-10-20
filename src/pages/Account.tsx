@@ -264,7 +264,7 @@ const Account: React.FC = () => {
                 className: baseClasses.info,
                 title: 'Paiement en cours de validation',
                 message:
-                    'Votre transaction est en cours de traitement. Nous vous informerons par e-mail dès que le paiement sera confirmé.',
+                    'Votre transaction est en cours de traitement, veuillez patienter quelques instants.',
             };
         }
 
