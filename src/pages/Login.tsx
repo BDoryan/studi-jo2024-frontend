@@ -1,6 +1,5 @@
 import React, {useCallback, useMemo, useState} from 'react';
 import {Link, Navigate} from 'react-router-dom';
-import Header from "@/components/Header";
 import Title from "@/components/Title";
 import {Button} from "@/components/Button";
 import {
@@ -10,7 +9,7 @@ import {
     LoginResponse,
 } from "@/lib/api";
 import {translate, translateError} from "@/lib/i18n";
-import { useAuth } from '@/lib/auth';
+import { useAuth, useTwoFactorChallenge, sanitizeOtpInput } from '@/lib/auth';
 import Layout from "@/components/Layout";
 
 type LoginFormState = {
@@ -72,6 +71,14 @@ const renderAlert = (status: FormStatus) => {
 const Login: React.FC = () => {
     const authApi = useMemo(() => new AuthApi(), []);
     const { login: applyAuthToken, isAuthenticated } = useAuth();
+    const {
+        state: twoFactor,
+        isActive: isTwoFactorStep,
+        activate: activateTwoFactor,
+        reset: resetTwoFactor,
+        setCode: setTwoFactorCode,
+        setError: setTwoFactorError,
+    } = useTwoFactorChallenge();
 
     const [form, setForm] = useState<LoginFormState>(initialForm);
     const [status, setStatus] = useState<FormStatus>(initialStatus);
@@ -101,8 +108,9 @@ const Login: React.FC = () => {
                 delete next[fieldName];
                 return next;
             });
+            setStatus((prev) => (prev.error ? {...prev, error: null} : prev));
         },
-        [],
+        [setStatus],
     );
 
     const resolveErrorMessages = useCallback(
@@ -265,11 +273,33 @@ const Login: React.FC = () => {
         [fieldLabels],
     );
 
-    const handleSubmit = useCallback(
+    const handleTwoFactorCodeChange = useCallback(
+        (event: React.ChangeEvent<HTMLInputElement>) => {
+            const sanitizedValue = sanitizeOtpInput(event.target.value);
+            setTwoFactorCode(sanitizedValue);
+            setTwoFactorError(null);
+            setStatus((prev) => (prev.error ? {...prev, error: null} : prev));
+        },
+        [setStatus, setTwoFactorCode, setTwoFactorError],
+    );
+
+    const handleCancelTwoFactor = useCallback(() => {
+        resetTwoFactor();
+        setTwoFactorError(null);
+        setStatus({...initialStatus});
+    }, [resetTwoFactor, setTwoFactorError, setStatus]);
+
+    const handleResendCode = useCallback(() => {
+        // Placeholder for future resend implementation.
+        console.info('Renvoyer le code de vérification (fonctionnalité à venir).');
+    }, []);
+
+    const handleCredentialsSubmit = useCallback(
         async (event: React.FormEvent<HTMLFormElement>) => {
             event.preventDefault();
             setStatus({loading: true, success: null, error: null});
             setErrors({});
+            setTwoFactorError(null);
 
             try {
                 const payload: LoginPayload = {
@@ -278,15 +308,34 @@ const Login: React.FC = () => {
                 };
 
                 const response = await authApi.login(payload);
+                if (response.two_factor_required) {
+                    const challengeId =
+                        typeof response.challenge_id === 'string'
+                            ? response.challenge_id
+                            : undefined;
+                    if (!challengeId) {
+                        throw new Error("L'API a signalé une double authentification sans identifiant de défi.");
+                    }
+                    activateTwoFactor(challengeId);
+                    setStatus({
+                        loading: false,
+                        success: 'Un code de vérification vous a été envoyé par e-mail.',
+                        error: null,
+                    });
+                    return;
+                }
+
                 const token = extractTokenFromResponse(response);
 
                 await applyAuthToken(token);
                 setForm(initialForm);
                 setErrors({});
+                resetTwoFactor();
                 setStatus({loading: false, success: 'Connexion réussie.', error: null});
             } catch (error) {
                 const {general, fieldErrors} = resolveErrorMessages(error);
                 setErrors(fieldErrors);
+                resetTwoFactor();
                 setStatus({
                     loading: false,
                     success: null,
@@ -294,7 +343,73 @@ const Login: React.FC = () => {
                 });
             }
         },
-        [applyAuthToken, authApi, form, resolveErrorMessages],
+        [
+            activateTwoFactor,
+            applyAuthToken,
+            authApi,
+            form,
+            resetTwoFactor,
+            resolveErrorMessages,
+            setTwoFactorError,
+        ],
+    );
+
+    const handleTwoFactorSubmit = useCallback(
+        async (event: React.FormEvent<HTMLFormElement>) => {
+            event.preventDefault();
+
+            if (!twoFactor.challengeId) {
+                return;
+            }
+
+            const code = twoFactor.code.trim();
+
+            if (code.length !== 6) {
+                const message = 'Le code doit contenir 6 chiffres.';
+                setTwoFactorError(message);
+                setStatus({
+                    loading: false,
+                    success: null,
+                    error: message,
+                });
+                return;
+            }
+
+            setTwoFactorError(null);
+            setStatus({loading: true, success: null, error: null});
+            setErrors({});
+
+            try {
+                const response = await authApi.verifyLogin({
+                    challenge_id: twoFactor.challengeId,
+                    code,
+                });
+
+                const token = extractTokenFromResponse(response);
+
+                await applyAuthToken(token);
+                setForm(initialForm);
+                resetTwoFactor();
+                setStatus({loading: false, success: 'Connexion réussie.', error: null});
+            } catch (error) {
+                const {general} = resolveErrorMessages(error);
+                setTwoFactorError(general);
+                setStatus({
+                    loading: false,
+                    success: null,
+                    error: general,
+                });
+            }
+        },
+        [
+            applyAuthToken,
+            authApi,
+            resetTwoFactor,
+            resolveErrorMessages,
+            twoFactor.challengeId,
+            twoFactor.code,
+            setTwoFactorError,
+        ],
     );
 
     const heroImageUrl = "/imgs/display.jpeg";
@@ -325,70 +440,144 @@ const Login: React.FC = () => {
                             <p className="mt-3 text-center text-base text-gray-600">
                                 Accédez à votre espace client pour retrouver vos billets et suivre vos commandes.
                             </p>
-                            <form className="mt-8 flex flex-col gap-6" onSubmit={handleSubmit}>
+                            <form
+                                className="mt-8 flex flex-col gap-6"
+                                onSubmit={isTwoFactorStep ? handleTwoFactorSubmit : handleCredentialsSubmit}
+                            >
                                 {renderAlert(status)}
-                                <label className="flex flex-col gap-2 text-left">
-                                    <span className="text-sm font-semibold uppercase text-gray-600">
-                                        Adresse e-mail{' '}
-                                        <span className="text-red-600">*</span>
-                                    </span>
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        required
-                                        autoComplete="email"
-                                        value={form.email}
-                                        onChange={handleChange}
-                                        className={`rounded-xl border px-4 py-3 text-base text-gray-900 shadow-sm focus:outline-none focus:ring-2 ${
-                                            errors.email
-                                                ? 'border-red-400 focus:border-red-500 focus:ring-red-200'
-                                                : 'border-gray-200 focus:border-primary-400 focus:ring-primary-300'
-                                        }`}
-                                        placeholder="vous@example.com"
-                                        aria-invalid={Boolean(errors.email)}
-                                        aria-describedby={errors.email ? 'login-email-error' : undefined}
-                                    />
-                                    {errors.email && (
-                                        <p id="login-email-error" className="text-sm text-red-600 leading-4">
-                                            {errors.email}
+                                {isTwoFactorStep ? (
+                                    <>
+                                        <p className="text-sm text-gray-600">
+                                            Saisissez le code à 6 chiffres reçu par e-mail pour finaliser votre connexion.
                                         </p>
-                                    )}
-                                </label>
-                                <label className="flex flex-col gap-2 text-left">
-                                    <span className="text-sm font-semibold uppercase text-gray-600">
-                                        Mot de passe{' '}
-                                        <span className="text-red-600">*</span>
-                                    </span>
-                                    <input
-                                        type="password"
-                                        name="password"
-                                        required
-                                        autoComplete="current-password"
-                                        value={form.password}
-                                        onChange={handleChange}
-                                        className={`rounded-xl border px-4 py-3 text-base text-gray-900 shadow-sm focus:outline-none focus:ring-2 ${
-                                            errors.password
-                                                ? 'border-red-400 focus:border-red-500 focus:ring-red-200'
-                                                : 'border-gray-200 focus:border-primary-400 focus:ring-primary-300'
-                                        }`}
-                                        placeholder="********"
-                                        aria-invalid={Boolean(errors.password)}
-                                        aria-describedby={errors.password ? 'login-password-error' : undefined}
-                                    />
-                                    {errors.password && (
-                                        <p id="login-password-error" className="text-sm text-red-600 leading-4">
-                                            {errors.password}
+                                        <p className="text-xs text-gray-500 italic">
+                                            Projet scolaire : si vous ne recevez rien, vous pouvez saisir le code 01102003.
                                         </p>
-                                    )}
-                                </label>
-                                <Button
-                                    type="submit"
-                                    variant="primary"
-                                    className="mt-2 w-full sm:w-auto"
-                                    disabled={status.loading}
-                                >
-                                    {status.loading ? 'Connexion en cours...' : 'Se connecter'}
-                                </Button>
+                                        <label className="flex flex-col gap-2 text-left">
+                                            <span className="text-sm font-semibold uppercase text-gray-600">
+                                                Code de vérification <span className="text-red-600">*</span>
+                                            </span>
+                                            <input
+                                                type="text"
+                                                inputMode="numeric"
+                                                pattern="[0-9]*"
+                                                name="otp"
+                                                required
+                                                value={twoFactor.code}
+                                                onChange={handleTwoFactorCodeChange}
+                                                maxLength={6}
+                                                className={`rounded-xl border px-4 py-3 text-base text-gray-900 tracking-widest shadow-sm focus:outline-none focus:ring-2 ${
+                                                    twoFactor.error
+                                                        ? 'border-red-400 focus:border-red-500 focus:ring-red-200'
+                                                        : 'border-gray-200 focus:border-primary-400 focus:ring-primary-300'
+                                                }`}
+                                                placeholder="000000"
+                                                aria-invalid={Boolean(twoFactor.error)}
+                                                aria-describedby={twoFactor.error ? 'login-otp-error' : undefined}
+                                            />
+                                            {twoFactor.error && (
+                                                <p id="login-otp-error" className="text-sm text-red-600 leading-4">
+                                                    {twoFactor.error}
+                                                </p>
+                                            )}
+                                        </label>
+                                        <div className="flex flex-col gap-3 sm:flex-row">
+                                            <Button
+                                                type="submit"
+                                                variant="primary"
+                                                className="w-full sm:w-auto"
+                                                disabled={status.loading || twoFactor.code.trim().length !== 6}
+                                            >
+                                                {status.loading ? 'Vérification en cours...' : 'Valider le code'}
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                className="w-full sm:w-auto"
+                                                onClick={handleCancelTwoFactor}
+                                                disabled={status.loading}
+                                            >
+                                                Utiliser une autre adresse e-mail
+                                            </Button>
+                                        </div>
+                                        <p className="text-sm text-gray-500">
+                                            Vous n'avez pas reçu le code ?{' '}
+                                            <button
+                                                type="button"
+                                                className="font-semibold text-primary-500 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                                onClick={handleResendCode}
+                                                disabled
+                                            >
+                                                Renvoyer le code (bientôt disponible)
+                                            </button>
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <label className="flex flex-col gap-2 text-left">
+                                            <span className="text-sm font-semibold uppercase text-gray-600">
+                                                Adresse e-mail{' '}
+                                                <span className="text-red-600">*</span>
+                                            </span>
+                                            <input
+                                                type="email"
+                                                name="email"
+                                                required
+                                                autoComplete="email"
+                                                value={form.email}
+                                                onChange={handleChange}
+                                                className={`rounded-xl border px-4 py-3 text-base text-gray-900 shadow-sm focus:outline-none focus:ring-2 ${
+                                                    errors.email
+                                                        ? 'border-red-400 focus:border-red-500 focus:ring-red-200'
+                                                        : 'border-gray-200 focus:border-primary-400 focus:ring-primary-300'
+                                                }`}
+                                                placeholder="vous@example.com"
+                                                aria-invalid={Boolean(errors.email)}
+                                                aria-describedby={errors.email ? 'login-email-error' : undefined}
+                                            />
+                                            {errors.email && (
+                                                <p id="login-email-error" className="text-sm text-red-600 leading-4">
+                                                    {errors.email}
+                                                </p>
+                                            )}
+                                        </label>
+                                        <label className="flex flex-col gap-2 text-left">
+                                            <span className="text-sm font-semibold uppercase text-gray-600">
+                                                Mot de passe{' '}
+                                                <span className="text-red-600">*</span>
+                                            </span>
+                                            <input
+                                                type="password"
+                                                name="password"
+                                                required
+                                                autoComplete="current-password"
+                                                value={form.password}
+                                                onChange={handleChange}
+                                                className={`rounded-xl border px-4 py-3 text-base text-gray-900 shadow-sm focus:outline-none focus:ring-2 ${
+                                                    errors.password
+                                                        ? 'border-red-400 focus:border-red-500 focus:ring-red-200'
+                                                        : 'border-gray-200 focus:border-primary-400 focus:ring-primary-300'
+                                                }`}
+                                                placeholder="********"
+                                                aria-invalid={Boolean(errors.password)}
+                                                aria-describedby={errors.password ? 'login-password-error' : undefined}
+                                            />
+                                            {errors.password && (
+                                                <p id="login-password-error" className="text-sm text-red-600 leading-4">
+                                                    {errors.password}
+                                                </p>
+                                            )}
+                                        </label>
+                                        <Button
+                                            type="submit"
+                                            variant="primary"
+                                            className="mt-2 w-full sm:w-auto"
+                                            disabled={status.loading}
+                                        >
+                                            {status.loading ? 'Connexion en cours...' : 'Se connecter'}
+                                        </Button>
+                                    </>
+                                )}
                             </form>
                             <p className="mt-6 text-center text-sm text-gray-600 lg:text-left">
                                 Pas encore de compte ?{' '}

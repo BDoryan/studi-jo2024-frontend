@@ -39,5 +39,11 @@ L’application est accessible sur `http://localhost:5173`.
 - `src/tests` : utilitaires de test partagés (helpers de rendu avec router, etc.).
 - `public/imgs` : assets statiques (logos, visuels).
 
+## Flux de double authentification
+- Lors d’une connexion (`/auth/customer/login` ou `/auth/admin/login`), l’API peut renvoyer `two_factor_required: true` ainsi qu’un `challenge_id`.
+- Le frontend affiche alors un second formulaire OTP (6 chiffres) et appelle `AuthApi.verifyLogin` avec `{ challenge_id, code }` sur l’endpoint `/verify` correspondant.
+- Tant que la vérification n’est pas validée, aucun JWT n’est stocké. Le token final est persistant exactement comme avant.
+- Les erreurs de code (expiré/invalide) sont remontées dans le champ OTP, et un callback “Renvoyer le code” est déjà câblé côté UI mais désactivé en attendant le support backend.
+
 ## Backend
 Pour en savoir plus sur le projet backend (API et logique métier), consultez : https://github.com/BDoryan/studi-jo2024-backend

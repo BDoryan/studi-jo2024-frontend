@@ -19,13 +19,20 @@ export type RegisterPayload = JsonRecord & {
 };
 
 export interface LoginResponse extends JsonRecord {
-  token: string;
+  token: string | null;
+  two_factor_required?: boolean;
+  challenge_id?: string;
 }
 
 export interface RegisterResponse extends JsonRecord {
   status?: string;
   message?: string;
 }
+
+export type LoginVerifyPayload = JsonRecord & {
+  challenge_id: string;
+  code: string;
+};
 
 export interface AuthRequestOptions extends Omit<RequestOptions, 'body' | 'method'> {
   /**
@@ -40,6 +47,19 @@ export class AuthApi extends ApiClient {
     options: AuthRequestOptions = {},
   ): Promise<LoginResponse> {
     const path = options.path ?? ApiRoutes.AUTH_CUSTOMER_LOGIN;
+
+    return this.request<LoginResponse>(path, {
+      ...options,
+      method: 'POST',
+      body: payload,
+    });
+  }
+
+  async verifyLogin(
+    payload: LoginVerifyPayload,
+    options: AuthRequestOptions = {},
+  ): Promise<LoginResponse> {
+    const path = options.path ?? ApiRoutes.AUTH_CUSTOMER_LOGIN_VERIFY;
 
     return this.request<LoginResponse>(path, {
       ...options,

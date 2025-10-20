@@ -5,6 +5,7 @@ import Title from '@/components/Title';
 import { Button } from '@/components/Button';
 import { AuthApi, HttpError, LoginPayload, LoginResponse, ApiRoutes } from '@/lib/api';
 import { useAdminAuth } from '@/lib/admin';
+import { useTwoFactorChallenge, sanitizeOtpInput } from '@/lib/auth';
 import { ADMIN_DASHBOARD_PATH } from '@/pages/admin/constants';
 import { translate, translateError, translateMessage } from '@/lib/i18n';
 
@@ -65,10 +66,21 @@ export const AdminLogin: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { login, isAuthenticated, isLoading } = useAdminAuth();
+    const {
+        state: twoFactor,
+        isActive: isTwoFactorStep,
+        activate: activateTwoFactor,
+        reset: resetTwoFactor,
+        setCode: setTwoFactorCode,
+        setError: setTwoFactorError,
+    } = useTwoFactorChallenge();
     const [form, setForm] = useState<AdminLoginForm>(initialForm);
     const [error, setError] = useState<string | null>(null);
+    const [notice, setNotice] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<AdminLoginErrors>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(false);
+    const isProcessing = isSubmitting || isVerifying;
 
     const redirectTarget =
         (location.state as { from?: string } | null)?.from ?? ADMIN_DASHBOARD_PATH;
@@ -90,6 +102,8 @@ export const AdminLogin: React.FC = () => {
             delete next[name as keyof AdminLoginForm];
             return next;
         });
+        setError(null);
+        setNotice(null);
     }, []);
 
     const validateForm = useCallback(
@@ -117,10 +131,32 @@ export const AdminLogin: React.FC = () => {
         [fieldLabels],
     );
 
-    const handleSubmit = useCallback(
+    const handleTwoFactorCodeChange = useCallback(
+        (event: React.ChangeEvent<HTMLInputElement>) => {
+            const sanitized = sanitizeOtpInput(event.target.value);
+            setTwoFactorCode(sanitized);
+            setTwoFactorError(null);
+            setError(null);
+        },
+        [setError, setTwoFactorCode, setTwoFactorError],
+    );
+
+    const handleCancelTwoFactor = useCallback(() => {
+        resetTwoFactor();
+        setTwoFactorError(null);
+        setNotice(null);
+        setError(null);
+    }, [resetTwoFactor, setTwoFactorError, setNotice, setError]);
+
+    const handleResendCode = useCallback(() => {
+        console.info('Renvoyer le code administrateur (fonctionnalité à venir).');
+    }, []);
+
+    const handleCredentialsSubmit = useCallback(
         async (event: React.FormEvent<HTMLFormElement>) => {
             event.preventDefault();
             setError(null);
+            setNotice(null);
             const validationErrors = validateForm(form);
             if (Object.keys(validationErrors).length > 0) {
                 setFieldErrors(validationErrors);
@@ -132,6 +168,21 @@ export const AdminLogin: React.FC = () => {
                 const response = await authApi.login(form, {
                     path: ApiRoutes.AUTH_ADMIN_LOGIN,
                 });
+                if (response.two_factor_required) {
+                    const challengeId =
+                        typeof response.challenge_id === 'string' ? response.challenge_id : undefined;
+                    if (!challengeId) {
+                        throw new Error(
+                            "L'API a indiqué une double authentification sans identifiant du défi.",
+                        );
+                    }
+                    activateTwoFactor(challengeId);
+                    setNotice(
+                        "Un code de vérification à 6 chiffres vous a été envoyé par e-mail. Saisissez-le ci-dessous pour continuer.",
+                    );
+                    setIsSubmitting(false);
+                    return;
+                }
                 const token = ensureToken(response);
                 const email =
                     typeof (response as Record<string, unknown>).email === 'string'
@@ -142,14 +193,93 @@ export const AdminLogin: React.FC = () => {
                         ? String((response as Record<string, unknown>).full_name)
                         : undefined;
                 await login({ token, email, full_name });
+                resetTwoFactor();
                 navigate(redirectTarget, { replace: true });
             } catch (cause) {
+                resetTwoFactor();
                 setError(resolveErrorMessage(cause));
             } finally {
                 setIsSubmitting(false);
             }
         },
-        [authApi, form, login, navigate, redirectTarget, validateForm],
+        [
+            activateTwoFactor,
+            authApi,
+            form,
+            login,
+            navigate,
+            redirectTarget,
+            resetTwoFactor,
+            setNotice,
+            resolveErrorMessage,
+            validateForm,
+        ],
+    );
+
+    const handleTwoFactorSubmit = useCallback(
+        async (event: React.FormEvent<HTMLFormElement>) => {
+            event.preventDefault();
+
+            if (!twoFactor.challengeId) {
+                return;
+            }
+
+            const code = twoFactor.code.trim();
+
+            if (code.length !== 6) {
+                const message = 'Le code doit contenir 6 chiffres.';
+                setTwoFactorError(message);
+                setError(message);
+                return;
+            }
+
+            setTwoFactorError(null);
+            setIsVerifying(true);
+            setError(null);
+
+            try {
+                const response = await authApi.verifyLogin(
+                    {
+                        challenge_id: twoFactor.challengeId,
+                        code,
+                    },
+                    {
+                        path: ApiRoutes.AUTH_ADMIN_LOGIN_VERIFY,
+                    },
+                );
+
+                const token = ensureToken(response);
+                const email =
+                    typeof (response as Record<string, unknown>).email === 'string'
+                        ? String((response as Record<string, unknown>).email)
+                        : form.email;
+                const full_name =
+                    typeof (response as Record<string, unknown>).full_name === 'string'
+                        ? String((response as Record<string, unknown>).full_name)
+                        : undefined;
+                await login({ token, email, full_name });
+                resetTwoFactor();
+                navigate(redirectTarget, { replace: true });
+            } catch (cause) {
+                const message = resolveErrorMessage(cause);
+                setTwoFactorError(message);
+                setError(message);
+            } finally {
+                setIsVerifying(false);
+            }
+        },
+        [
+            authApi,
+            form.email,
+            login,
+            navigate,
+            redirectTarget,
+            resolveErrorMessage,
+            resetTwoFactor,
+            twoFactor.challengeId,
+            twoFactor.code,
+            setTwoFactorError,
+        ],
     );
 
     if (isLoading) {
@@ -208,68 +338,155 @@ export const AdminLogin: React.FC = () => {
                     </div>
                 )}
 
-                <form className="space-y-5" onSubmit={handleSubmit} noValidate>
-                    <div className="space-y-2">
-                        <label
-                            htmlFor="admin-email"
-                            className="text-xs font-semibold uppercase tracking-wide text-gray-700"
-                        >
-                            {fieldLabels.email}{' '}
-                            <span className="text-red-600">*</span>
-                        </label>
-                        <input
-                            id="admin-email"
-                            name="email"
-                            type="email"
-                            autoComplete="username"
-                            required
-                            value={form.email}
-                            onChange={handleChange}
-                            disabled={isSubmitting}
-                            className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-200/60 disabled:cursor-not-allowed disabled:opacity-70 ${
-                                fieldErrors.email
-                                    ? 'border-red-400 bg-red-50 text-red-700 placeholder-red-300'
-                                    : 'border-gray-300 bg-white text-gray-800 placeholder-gray-400'
-                            }`}
-                            placeholder="admin@jo2024.fr"
-                        />
-                        {fieldErrors.email && (
-                            <p className="text-xs text-red-600">{fieldErrors.email}</p>
-                        )}
+                {notice && (
+                    <div className="mb-6 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                        {notice}
                     </div>
+                )}
 
-                    <div className="space-y-2">
-                        <label
-                            htmlFor="admin-password"
-                            className="text-xs font-semibold uppercase tracking-wide text-gray-700"
-                        >
-                            {fieldLabels.password}{' '}
-                            <span className="text-red-600">*</span>
-                        </label>
-                        <input
-                            id="admin-password"
-                            name="password"
-                            type="password"
-                            autoComplete="current-password"
-                            required
-                            value={form.password}
-                            onChange={handleChange}
-                            disabled={isSubmitting}
-                            className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-200/60 disabled:cursor-not-allowed disabled:opacity-70 ${
-                                fieldErrors.password
-                                    ? 'border-red-400 bg-red-50 text-red-700 placeholder-red-300'
-                                    : 'border-gray-300 bg-white text-gray-800 placeholder-gray-400'
-                            }`}
-                            placeholder="••••••••"
-                        />
-                        {fieldErrors.password && (
-                            <p className="text-xs text-red-600">{fieldErrors.password}</p>
-                        )}
-                    </div>
+                <form
+                    className="space-y-5"
+                    onSubmit={isTwoFactorStep ? handleTwoFactorSubmit : handleCredentialsSubmit}
+                    noValidate
+                >
+                    {isTwoFactorStep ? (
+                        <>
+                            <div className="space-y-2">
+                                <label
+                                    htmlFor="admin-otp"
+                                    className="text-xs font-semibold uppercase tracking-wide text-gray-700"
+                                >
+                                    Code de vérification <span className="text-red-600">*</span>
+                                </label>
+                                <input
+                                    id="admin-otp"
+                                    name="otp"
+                                    type="text"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    required
+                                    value={twoFactor.code}
+                                    onChange={handleTwoFactorCodeChange}
+                                    disabled={isProcessing}
+                                    maxLength={6}
+                                    className={`w-full rounded-xl border px-4 py-3 text-center text-lg tracking-widest outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-200/60 disabled:cursor-not-allowed disabled:opacity-70 ${
+                                        twoFactor.error
+                                            ? 'border-red-400 bg-red-50 text-red-700 placeholder-red-300'
+                                            : 'border-gray-300 bg-white text-gray-800 placeholder-gray-400'
+                                    }`}
+                                    placeholder="000000"
+                                    aria-invalid={Boolean(twoFactor.error)}
+                                    aria-describedby={twoFactor.error ? 'admin-login-otp-error' : undefined}
+                                />
+                                {twoFactor.error && (
+                                    <p
+                                        id="admin-login-otp-error"
+                                        className="text-xs text-red-600"
+                                    >
+                                        {twoFactor.error}
+                                    </p>
+                                )}
+                            </div>
+                            <p className="text-xs text-gray-500 italic">
+                                Projet scolaire : si l’e-mail est absent, utilisez le code 01102003.
+                            </p>
+                            <div className="flex flex-col gap-3 sm:flex-row">
+                                <Button
+                                    type="submit"
+                                    className="w-full sm:w-auto"
+                                    disabled={
+                                        isProcessing || twoFactor.code.trim().length !== 6
+                                    }
+                                >
+                                    {isVerifying ? 'Vérification en cours...' : 'Valider le code'}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    className="w-full sm:w-auto"
+                                    disabled={isProcessing}
+                                    onClick={handleCancelTwoFactor}
+                                >
+                                    Utiliser une autre adresse e-mail
+                                </Button>
+                            </div>
+                            <p className="text-xs text-gray-500">
+                                Code expiré ou non reçu ?{' '}
+                                <button
+                                    type="button"
+                                    className="font-semibold text-primary-500 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                    onClick={handleResendCode}
+                                    disabled
+                                >
+                                    Renvoyer le code (bientôt disponible)
+                                </button>
+                            </p>
+                        </>
+                    ) : (
+                        <>
+                            <div className="space-y-2">
+                                <label
+                                    htmlFor="admin-email"
+                                    className="text-xs font-semibold uppercase tracking-wide text-gray-700"
+                                >
+                                    {fieldLabels.email}{' '}
+                                    <span className="text-red-600">*</span>
+                                </label>
+                                <input
+                                    id="admin-email"
+                                    name="email"
+                                    type="email"
+                                    autoComplete="username"
+                                    required
+                                    value={form.email}
+                                    onChange={handleChange}
+                                    disabled={isProcessing}
+                                    className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-200/60 disabled:cursor-not-allowed disabled:opacity-70 ${
+                                        fieldErrors.email
+                                            ? 'border-red-400 bg-red-50 text-red-700 placeholder-red-300'
+                                            : 'border-gray-300 bg-white text-gray-800 placeholder-gray-400'
+                                    }`}
+                                    placeholder="admin@jo2024.fr"
+                                />
+                                {fieldErrors.email && (
+                                    <p className="text-xs text-red-600">{fieldErrors.email}</p>
+                                )}
+                            </div>
 
-                    <Button type="submit" className="w-full" disabled={isSubmitting}>
-                        {isSubmitting ? 'Connexion en cours...' : 'Se connecter'}
-                    </Button>
+                            <div className="space-y-2">
+                                <label
+                                    htmlFor="admin-password"
+                                    className="text-xs font-semibold uppercase tracking-wide text-gray-700"
+                                >
+                                    {fieldLabels.password}{' '}
+                                    <span className="text-red-600">*</span>
+                                </label>
+                                <input
+                                    id="admin-password"
+                                    name="password"
+                                    type="password"
+                                    autoComplete="current-password"
+                                    required
+                                    value={form.password}
+                                    onChange={handleChange}
+                                    disabled={isProcessing}
+                                    className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:border-primary-400 focus:ring-2 focus:ring-primary-200/60 disabled:cursor-not-allowed disabled:opacity-70 ${
+                                        fieldErrors.password
+                                            ? 'border-red-400 bg-red-50 text-red-700 placeholder-red-300'
+                                            : 'border-gray-300 bg-white text-gray-800 placeholder-gray-400'
+                                    }`}
+                                    placeholder="••••••••"
+                                />
+                                {fieldErrors.password && (
+                                    <p className="text-xs text-red-600">{fieldErrors.password}</p>
+                                )}
+                            </div>
+
+                            <Button type="submit" className="w-full" disabled={isProcessing}>
+                                {isSubmitting ? 'Connexion en cours...' : 'Se connecter'}
+                            </Button>
+                        </>
+                    )}
                 </form>
             </Card>
         </div>
