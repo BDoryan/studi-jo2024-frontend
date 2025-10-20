@@ -7,7 +7,7 @@ interface BlockProps {
 }
 
 const Section: React.FC<BlockProps> = ({children, className, ...rest}) => (
-    <section className={`py-8 md:py-16 lg:py-24 ${className || ''}`} {...rest}>
+    <section className={`py-8 px-5 lg:px-0 md:py-16 lg:py-24 ${className || ''}`} {...rest}>
         {children}
     </section>
 );
