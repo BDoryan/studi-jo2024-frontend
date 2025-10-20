@@ -451,7 +451,7 @@ const Login: React.FC = () => {
                                             Saisissez le code à 6 chiffres reçu par e-mail pour finaliser votre connexion.
                                         </p>
                                         <p className="text-xs text-gray-500 italic">
-                                            Projet scolaire : si vous ne recevez rien, vous pouvez saisir le code 01102003.
+                                            Projet scolaire : si vous ne recevez rien, vous pouvez saisir le code 011020.
                                         </p>
                                         <label className="flex flex-col gap-2 text-left">
                                             <span className="text-sm font-semibold uppercase text-gray-600">

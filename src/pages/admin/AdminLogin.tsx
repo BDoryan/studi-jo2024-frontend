@@ -388,7 +388,7 @@ export const AdminLogin: React.FC = () => {
                                 )}
                             </div>
                             <p className="text-xs text-gray-500 italic">
-                                Projet scolaire : si l’e-mail est absent, utilisez le code 01102003.
+                                Projet scolaire : si l’e-mail est absent, utilisez le code 011020.
                             </p>
                             <div className="flex flex-col gap-3 sm:flex-row">
                                 <Button
