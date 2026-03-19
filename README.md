@@ -1,49 +1,59 @@
 # Studi JO 2024 – Frontend
 
-Application React qui expose la billetterie des Jeux Olympiques et Paralympiques de Paris 2024 : parcours marketing, consultation des offres, authentification et accès compte utilisateur.
+React application exposing the ticketing system for the Paris 2024 Olympic and Paralympic Games: marketing journey, offer browsing, authentication, and user account access.
 
-## Stack principale
-- Vite + React 18 (TypeScript)
-- Tailwind CSS avec thème personnalisé Paris 2024
-- React Router pour la navigation
-- Intégration aux APIs métier via `src/lib/api`
+## Main Stack
 
-## Prérequis
-- Node.js 18+
-- npm (ou pnpm/yarn selon vos habitudes)
+* Vite + React 18 (TypeScript)
+* Tailwind CSS with a custom Paris 2024 theme
+* React Router for navigation
+* Integration with business APIs via `src/lib/api`
+
+## Prerequisites
+
+* Node.js 18+
+* npm (or pnpm/yarn depending on your preference)
 
 ## Installation
+
 ```bash
 npm install
 ```
 
-## Lancer le projet
+## Run the project
+
 ```bash
 npm run dev
 ```
-L’application est accessible sur `http://localhost:5173`.
 
-## Scripts utiles
-- `npm run dev` : serveur de développement avec hot reload.
-- `npm run build` : build de production dans `dist/`.
-- `npm run preview` : prévisualisation locale du build.
-- `npm run test` : exécute la suite de tests (Vitest + Testing Library) en mode CI.
-- `npm run test:watch` : lance les tests en mode watch interactif.
+The application is available at `http://localhost:5173`.
 
-## Structure rapide
-- `src/components` : composants génériques (Header, Footer, Button, etc.).
-- `src/blocks` : sections de page réutilisables (Hero, Presentation…).
-- `src/pages` : pages complètes utilisées par le routeur.
-- `src/lib` : helpers, logique d’authentification et clients API.
-- `src/pages/__tests__` : tests d’intégration couvrant les parcours principaux (connexion, inscription, compte).
-- `src/tests` : utilitaires de test partagés (helpers de rendu avec router, etc.).
-- `public/imgs` : assets statiques (logos, visuels).
+## Useful scripts
 
-## Flux de double authentification
-- Lors d’une connexion (`/auth/customer/login` ou `/auth/admin/login`), l’API peut renvoyer `two_factor_required: true` ainsi qu’un `challenge_id`.
-- Le frontend affiche alors un second formulaire OTP (6 chiffres) et appelle `AuthApi.verifyLogin` avec `{ challenge_id, code }` sur l’endpoint `/verify` correspondant.
-- Tant que la vérification n’est pas validée, aucun JWT n’est stocké. Le token final est persistant exactement comme avant.
-- Les erreurs de code (expiré/invalide) sont remontées dans le champ OTP, et un callback “Renvoyer le code” est déjà câblé côté UI mais désactivé en attendant le support backend.
+* `npm run dev`: development server with hot reload.
+* `npm run build`: production build in `dist/`.
+* `npm run preview`: local preview of the build.
+* `npm run test`: runs the test suite (Vitest + Testing Library) in CI mode.
+* `npm run test:watch`: runs tests in interactive watch mode.
+
+## Quick structure
+
+* `src/components`: generic components (Header, Footer, Button, etc.).
+* `src/blocks`: reusable page sections (Hero, Presentation…).
+* `src/pages`: full pages used by the router.
+* `src/lib`: helpers, authentication logic, and API clients.
+* `src/pages/__tests__`: integration tests covering main flows (login, signup, account).
+* `src/tests`: shared testing utilities (render helpers with router, etc.).
+* `public/imgs`: static assets (logos, visuals).
+
+## Two-factor authentication flow
+
+* During login (`/auth/customer/login` or `/auth/admin/login`), the API may return `two_factor_required: true` along with a `challenge_id`.
+* The frontend then displays a second OTP form (6 digits) and calls `AuthApi.verifyLogin` with `{ challenge_id, code }` on the corresponding `/verify` endpoint.
+* Until verification is completed, no JWT is stored. The final token is persisted exactly as before.
+* Code errors (expired/invalid) are displayed in the OTP field, and a “Resend code” callback is already wired on the UI but disabled pending backend support.
 
 ## Backend
-Pour en savoir plus sur le projet backend (API et logique métier), consultez : https://github.com/BDoryan/studi-jo2024-backend
+
+For more details about the backend project (API and business logic), see:
+[https://github.com/BDoryan/studi-jo2024-backend](https://github.com/BDoryan/studi-jo2024-backend)
